@@ -367,6 +367,8 @@ module.exports = class FPN {
               first = false;
             }
           });
+        } else {
+          process.stdout.write(`     servers: ${clc.cyan(city.servers.map(server => server.hostname).join(", "))}\n`);
         }
       });
     });
@@ -396,11 +398,17 @@ module.exports = class FPN {
       process.exit(1);
     }
 
-    let list = [];
+    const list = [];
 
     data.servers.countries.forEach(country => {
       country.cities.forEach(city => {
-        list = list.concat(city.servers);
+        city.servers.forEach(server => {
+          list.push({
+            country: country.name,
+            city: city.name,
+            ...server,
+          });
+        });
       });
     });
 
