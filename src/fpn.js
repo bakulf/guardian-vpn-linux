@@ -6,7 +6,7 @@ const os = require("os");
 const path = require("path");
 const readline = require("readline");
 const { spawn } = require("child_process");
-const tmp = require('tmp');
+const tmp = require("tmp");
 
 const DEFAULT_URL = "https://fpn.firefox.com";
 const DEFAULT_INTERFACE_NAME = "wg0";
@@ -440,16 +440,19 @@ module.exports = class FPN {
     const tmpobj = tmp.dirSync({ unsafeCleanup: true });
     const filepath = path.join(tmpobj.name, `${interfaceName}.conf`);
 
-    const stream = fs.createWriteStream(filepath, { encoding: 'utf8' });
-    stream.write("[Interface]\n");
-    stream.write(`PrivateKey = ${keys.privkey}\n`);
-    stream.write(`Address = ${device.ipv4_address}, ${device.ipv6_address}\n`);
-    stream.write(`DNS = ${server.ipv4_gateway}\n`);
-    stream.write("\n[Peer]\n");
-    stream.write(`PublicKey = ${server.public_key}\n`);
-    stream.write(`Endpoint = ${server.ipv4_addr_in}:${this.chooseServerPort(server.port_ranges)}\n`);
-    stream.write("AllowedIPs = 0.0.0.0/0,::0/0\n");
-    stream.end();
+    await new Promise(resolve => {
+      const stream = fs.createWriteStream(filepath, { encoding: "utf8" });
+      stream.on("finish", _ => resolve());
+      stream.write("[Interface]\n");
+      stream.write(`PrivateKey = ${keys.privkey}\n`);
+      stream.write(`Address = ${device.ipv4_address}, ${device.ipv6_address}\n`);
+      stream.write(`DNS = ${server.ipv4_gateway}\n`);
+      stream.write("\n[Peer]\n");
+      stream.write(`PublicKey = ${server.public_key}\n`);
+      stream.write(`Endpoint = ${server.ipv4_addr_in}:${this.chooseServerPort(server.port_ranges)}\n`);
+      stream.write("AllowedIPs = 0.0.0.0/0,::0/0\n");
+      stream.end();
+    });
 
     process.stdout.write(`${clc.bold.cyan(filepath)}\n`);
 
