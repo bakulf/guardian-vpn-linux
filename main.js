@@ -41,6 +41,7 @@ try { fpn.login(argv.url, argv.deviceName); } catch(e) { console.log(e); }})
     argv => fpn.activate(false, argv.deviceName, argv.interfaceName, argv.serverName))
 
   .demandCommand()
+  .strict()
   .alias("h", "help")
   .alias("v", "version")
   .help()
