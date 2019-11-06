@@ -20,13 +20,13 @@ try { fpn.login(argv.url, argv.deviceName); } catch(e) { console.log(e); }})
     _ => fpn.show())
 
   .command("account", "shows the current remote settings", {},
-    argv => fpn.account())
+    _ => fpn.account())
 
   .command("servers", "shows the list of available servers", {},
-    argv => fpn.servers(false))
+    _ => fpn.servers(false))
 
   .command("fullservers", "shows the list of available servers (verbose)", {},
-    argv => fpn.servers(true))
+    _ => fpn.servers(true))
 
   .command("adddevice <deviceName>", "adds a device", {},
     argv => fpn.createDevice(argv.deviceName))
@@ -34,8 +34,11 @@ try { fpn.login(argv.url, argv.deviceName); } catch(e) { console.log(e); }})
   .command("deldevice <deviceName>", "drops a device", {},
     argv => fpn.removeDevice(argv.deviceName))
 
-  .command("activate", "activates the mozilla VPN", {},
-    _ => fpn.activate())
+  .command("activate [serverName] [interfaceName] [deviceName]", "activates the mozilla VPN", {},
+    argv => fpn.activate(true, argv.deviceName, argv.interfaceName, argv.serverName))
+
+  .command("deactivate [serverName] [interfaceName] [deviceName]", "activates the mozilla VPN", {},
+    argv => fpn.activate(false, argv.deviceName, argv.interfaceName, argv.serverName))
 
   .demandCommand()
   .alias("h", "help")

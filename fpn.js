@@ -6,8 +6,10 @@ const os = require("os");
 const path = require("path");
 const readline = require("readline");
 const { spawn } = require("child_process");
+const tmp = require('tmp');
 
 const DEFAULT_URL = "https://fpn.firefox.com";
+const DEFAULT_INTERFACE_NAME = "wg0";
 
 module.exports = class FPN {
   validateURL(url) {
@@ -165,7 +167,7 @@ module.exports = class FPN {
     data.user.devices.push(device);
 
     data.keys.push({
-      device: deviceName, 
+      device: deviceName,
       ...keys
     });
 
@@ -176,6 +178,33 @@ module.exports = class FPN {
     process.stdout.write("Storing credentials... ");
     fs.writeFileSync(this.configFile(), JSON.stringify(data));
     process.stdout.write(clc.green("done.\n"));
+  }
+
+  async retrieveServers(data) {
+    process.stdout.write("Retrieving servers list... ");
+    const url = new URL(data.url);
+    url.pathname = "/api/v1/vpn/servers";
+    const resp = await this.fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${data.token}`,
+        "Content-Type": "application/json",
+      },
+    }, 200);
+
+    const json = await resp.json();
+    process.stdout.write(clc.green("done.\n"));
+
+    return json;
+  }
+
+  chooseServerPort(ranges) {
+    let ports = [];
+    ranges.forEach(range => {
+      ports.push(range[0] + Math.floor(Math.random() * (range[1] - range[0])));
+    });
+
+    return ports[Math.floor(Math.random()*ports.length)];
   }
 
   async login(inputUrl, deviceName) {
@@ -197,6 +226,8 @@ module.exports = class FPN {
 
     await this.maybeRemoveDevice(rl, data, deviceName);
     await this.createDeviceInternal(data, deviceName);
+
+    data.servers = await this.retrieveServers(data);
 
     await this.storeCredentials(data);
 
@@ -291,6 +322,7 @@ module.exports = class FPN {
   async account() {
     const data = this.readConfigFile();
 
+    process.stdout.write("Retrieving account data... ");
     const url = new URL(data.url);
     url.pathname = "/api/v1/vpn/account";
     const resp = await this.fetch(url, {
@@ -302,26 +334,16 @@ module.exports = class FPN {
     }, 200);
 
     const remoteData = await resp.json();
+    process.stdout.write(clc.green("done.\n"));
+
     this.showInternal(url.origin, remoteData);
   }
 
   async servers(verbose) {
     const data = this.readConfigFile();
 
-    const url = new URL(data.url);
-    url.pathname = "/api/v1/vpn/servers";
-    const resp = await this.fetch(url, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${data.token}`,
-        "Content-Type": "application/json",
-      },
-    }, 200);
-
-    const json = await resp.json();
-
     process.stdout.write("\nCountries:\n");
-    json.countries.forEach(country => {
+    data.servers.countries.forEach(country => {
       process.stdout.write(` ${clc.yellow("*")} ${clc.cyan.bold(country.name)}`);
       process.stdout.write(` - code: ${clc.cyan.bold(country.code)}\n`);
       process.stdout.write(" - cities:\n");
@@ -350,8 +372,96 @@ module.exports = class FPN {
     });
   }
 
-  async activate() {
-    console.log("TODO");
-    process.exit(0);
+  async activate(up, deviceName, interfaceName, serverName) {
+    if (!deviceName) {
+      deviceName = os.hostname();
+      process.stdout.write(`No device name passed. Hostname is used instead: ${clc.cyan.bold(deviceName)}\n`);
+    }
+
+    if (!interfaceName) {
+      interfaceName = DEFAULT_INTERFACE_NAME;
+    }
+
+    const data = this.readConfigFile();
+
+    const device = data.user.devices.find(device => device.name === deviceName);
+    if (!device) {
+      process.stdout.write(`Device \`${clc.bold.cyan(deviceName)}\` does not exist.\n`);
+      process.exit(1);
+    }
+
+    const keys = data.keys.find(device => device.device === deviceName);
+    if (!keys) {
+      process.stdout.write(`No private key for device \`${clc.bold.cyan(deviceName)}\`.\n`);
+      process.exit(1);
+    }
+
+    let list = [];
+
+    data.servers.countries.forEach(country => {
+      country.cities.forEach(city => {
+        list = list.concat(city.servers);
+      });
+    });
+
+    let server;
+
+    if (serverName) {
+      server = list.find(s => s.hostname === serverName);
+      if (!server) {
+        process.stdout.write(`Server \`${clc.bold.cyan(serverName)}\` does not exist.\n`);
+        process.exit(1);
+      }
+    } else {
+      server = list[Math.floor(Math.random()*list.length)];
+    }
+
+    if (!server) {
+      process.stdout.write("No server?!?\n");
+      process.exit(1);
+    }
+
+    process.stdout.write("Server:\n");
+    for (let prop in server) {
+      let value = Array.isArray(server[prop]) ? server[prop].join(", ") : server[prop];
+      process.stdout.write(` ${clc.yellow("*")} ${prop}: ${clc.cyan.bold(value)}\n`);
+    }
+
+    process.stdout.write("Creating the configuration file... ");
+
+    const tmpobj = tmp.dirSync({ unsafeCleanup: true });
+    const filepath = path.join(tmpobj.name, `${interfaceName}.conf`);
+
+    const stream = fs.createWriteStream(filepath, { encoding: 'utf8' });
+    stream.write("[Interface]\n");
+    stream.write(`PrivateKey = ${keys.privkey}\n`);
+    stream.write(`Address = ${device.ipv4_address}, ${device.ipv6_address}\n`);
+    stream.write(`DNS = ${server.ipv4_gateway}\n`);
+    stream.write("\n[Peer]\n");
+    stream.write(`PublicKey = ${server.public_key}\n`);
+    stream.write(`Endpoint = ${server.ipv4_addr_in}:${this.chooseServerPort(server.port_ranges)}\n`);
+    stream.write("AllowedIPs = 0.0.0.0/0,::0/0\n");
+    stream.end();
+
+    process.stdout.write(`${clc.bold.cyan(filepath)}\n`);
+
+    process.stdout.write("Executing wg-quick:\n");
+
+    await new Promise(resolve => {
+      let child = spawn("wg-quick", [up ? "up" : "down", filepath]);
+      child.stdout.pipe(process.stdout, { end: false });
+      child.stderr.pipe(process.stderr, { end: false });
+      child.on("exit", (code, signal) => {
+        if (code === 0) {
+          process.stdout.write(clc.bold.green("VPN should be up and running.\n"));
+        } else {
+          process.stdout.write(clc.red("something went wrong.\n"));
+        }
+
+        resolve();
+      });
+    });
+
+    tmpobj.removeCallback();
   }
 }
