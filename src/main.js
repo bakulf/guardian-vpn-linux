@@ -10,8 +10,7 @@ yargs
   .usage("$0 <cmd> [options]")
 
   .command("login [url] [deviceName]", "starts the authentication flow", {},
-    argv => {
-try { fpn.login(argv.url, argv.deviceName); } catch(e) { console.log(e); }})
+    argv => fpn.login(argv.url, argv.deviceName))
 
   .command("logout", "forgets about your data", {},
     _ => fpn.logout())
