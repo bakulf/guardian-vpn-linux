@@ -2,14 +2,14 @@
   "name": "fpn",
   "version": "0.0.1",
   "description": "Just a funny experiment",
-  "main": "main.js",
+  "main": "src/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Andrea Marchesini <baku@mozilla.com>",
   "license": "Mozilla",
   "bin": {
-    "fpn": "./main.js"
+    "fpn": "./src/main.js"
   },
   "dependencies": {
     "cli-color": "^2.0.0",
