@@ -36,6 +36,17 @@ module.exports = class FPN {
     }
   }
 
+  getReadline() {
+    if (!this._rl) {
+      this._rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+      })
+    }
+
+    return this._rl;
+  }
+
   configFile() {
     const homedir = os.homedir();
     return path.join(homedir, ".fpn.cf");
@@ -52,6 +63,12 @@ module.exports = class FPN {
     }
     process.stdout.write(clc.green("done.\n"));
     return data;
+  }
+
+  removeConfigFile() {
+    process.stdout.write("Removing credentials... ");
+    fs.unlinkSync(this.configFile());
+    process.stdout.write(clc.green("done.\n"));
   }
 
   async generateKeys() {
@@ -92,7 +109,7 @@ module.exports = class FPN {
     return { privkey, pubkey };
   }
 
-  async completeLogin(rl, url) {
+  async completeLogin(url) {
     process.stdout.write("Requesting a login token... ");
     url.pathname = "/api/v1/vpn/login";
     const resp = await this.fetch(url, { method: "POST" }, 200);
@@ -101,7 +118,7 @@ module.exports = class FPN {
     process.stdout.write(clc.green("done.\n"));
 
     await new Promise(resolve => {
-      rl.question("Press [enter] to open the authentication page in the browser: ", resolve);
+      this.getReadline().question("Press [enter] to open the authentication page in the browser: ", resolve);
     });
 
     await open(json.login_url);
@@ -128,11 +145,11 @@ module.exports = class FPN {
     return data;
   }
 
-  async maybeRemoveDevice(rl, data, deviceName) {
+  async maybeRemoveDevice(data, deviceName) {
     const deviceId = data.user.devices.findIndex(device => device.name === deviceName);
     if (deviceId !== -1) {
       let response = await new Promise(resolve => {
-        rl.question(`Device \`${deviceName}\` exists. Do you want to remove it? [y/N] `, resolve);
+        this.getReadline().question(`Device \`${deviceName}\` exists. Do you want to remove it? [y/N] `, resolve);
       });
 
       if (!response.startsWith("y") && !response.startsWith("Y")) {
@@ -215,16 +232,11 @@ module.exports = class FPN {
       process.stdout.write(`No device name passed. Hostname is used instead: ${clc.cyan.bold(deviceName)}\n`);
     }
 
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    })
-
-    const data = await this.completeLogin(rl, url);
+    const data = await this.completeLogin(url);
     data.url = url.origin;
     data.keys = [];
 
-    await this.maybeRemoveDevice(rl, data, deviceName);
+    await this.maybeRemoveDevice(data, deviceName);
     await this.createDeviceInternal(data, deviceName);
 
     data.servers = await this.retrieveServers(data);
@@ -235,9 +247,13 @@ module.exports = class FPN {
   }
 
   async logout() {
-    process.stdout.write("Removing credentials... ");
-    fs.unlinkSync(this.configFile());
-    process.stdout.write(clc.green("done.\n"));
+    const data = this.readConfigFile();
+
+    for (let i = data.user.devices.length - 1; i >= 0; --i) {
+      await this.removeDeviceInternal(data, i);
+    }
+
+    this.removeConfigFile();
   }
 
   async show() {
@@ -296,6 +312,17 @@ module.exports = class FPN {
     if (deviceId === -1) {
       process.stdout.write(`Device \`${clc.bold.cyan(deviceName)}\` does not exist.\n`);
       process.exit(1);
+    }
+
+    if (data.user.devices.length === 1) {
+      const response = await new Promise(resolve => {
+       this.getReadline().question("Removing the last device, you logout. Do you want to proceed? [y/N] ", resolve);
+      });
+
+      if (!response.startsWith("y") && !response.startsWith("Y")) {
+        process.stdout.write("Abort by the user.\n");
+        process.exit(0);
+      }
     }
 
     await this.removeDeviceInternal(data, deviceId);
