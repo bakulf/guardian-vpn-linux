@@ -1,5 +1,4 @@
-Guardian-VPN for linux
-~~~~~~~~~~~~~~~~~~~~~~
+# Guardian-VPN for linux
 
 This is a proof-of-concept of the guardian VPN for linux.
 
