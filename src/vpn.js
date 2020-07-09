@@ -11,7 +11,7 @@ const tmp = require("tmp");
 const DEFAULT_URL = "https://fpn.firefox.com";
 const DEFAULT_INTERFACE_NAME = "wg0";
 
-module.exports = class FPN {
+module.exports = class MozillaVPN {
   validateURL(url) {
     try {
       return new URL(url || DEFAULT_URL);
@@ -49,7 +49,7 @@ module.exports = class FPN {
 
   configFile() {
     const homedir = os.homedir();
-    return path.join(homedir, ".fpn.cf");
+    return path.join(homedir, ".mozilla_vpn.cf");
   }
 
   readConfigFile() {

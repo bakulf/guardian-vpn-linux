@@ -1,43 +1,43 @@
 #!/usr/bin/env node
 
 const yargs = require("yargs");
-const FPN = require("./fpn.js");
+const MozillaVPN = require("./vpn.js");
 
-const fpn = new FPN();
+const mozilla_vpn = new MozillaVPN();
 
 yargs
-  .scriptName("fpn")
+  .scriptName("mozilla_vpn")
   .usage("$0 <cmd> [options]")
 
   .command("login [url] [deviceName]", "starts the authentication flow", {},
-    argv => fpn.login(argv.url, argv.deviceName))
+    argv => mozilla_vpn.login(argv.url, argv.deviceName))
 
   .command("logout", "forgets about your data", {},
-    _ => fpn.logout())
+    _ => mozilla_vpn.logout())
 
   .command("show", "shows the current settings", {},
-    _ => fpn.show())
+    _ => mozilla_vpn.show())
 
   .command("account", "shows the current remote settings", {},
-    _ => fpn.account())
+    _ => mozilla_vpn.account())
 
   .command("servers", "shows the list of available servers", {},
-    _ => fpn.servers(false))
+    _ => mozilla_vpn.servers(false))
 
   .command("fullservers", "shows the list of available servers (verbose)", {},
-    _ => fpn.servers(true))
+    _ => mozilla_vpn.servers(true))
 
   .command("adddevice <deviceName>", "adds a device", {},
-    argv => fpn.createDevice(argv.deviceName))
+    argv => mozilla_vpn.createDevice(argv.deviceName))
 
   .command("deldevice <deviceName>", "drops a device", {},
-    argv => fpn.removeDevice(argv.deviceName))
+    argv => mozilla_vpn.removeDevice(argv.deviceName))
 
   .command("activate [serverName] [interfaceName] [deviceName]", "activates the mozilla VPN", {},
-    argv => fpn.activate(true, argv.deviceName, argv.interfaceName, argv.serverName))
+    argv => mozilla_vpn.activate(true, argv.deviceName, argv.interfaceName, argv.serverName))
 
   .command("deactivate [serverName] [interfaceName] [deviceName]", "activates the mozilla VPN", {},
-    argv => fpn.activate(false, argv.deviceName, argv.interfaceName, argv.serverName))
+    argv => mozilla_vpn.activate(false, argv.deviceName, argv.interfaceName, argv.serverName))
 
   .demandCommand()
   .strict()

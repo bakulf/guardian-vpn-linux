@@ -1,5 +1,5 @@
 {
-  "name": "fpn",
+  "name": "mozilla_vpn",
   "version": "0.0.1",
   "description": "Just a funny experiment",
   "main": "src/main.js",
@@ -9,7 +9,7 @@
   "author": "Andrea Marchesini <baku@mozilla.com>",
   "license": "Mozilla",
   "bin": {
-    "fpn": "./src/main.js"
+    "mozilla_vpn": "./src/main.js"
   },
   "dependencies": {
     "cli-color": "^2.0.0",
