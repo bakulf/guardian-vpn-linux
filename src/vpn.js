@@ -366,7 +366,7 @@ module.exports = class MozillaVPN {
     this.showInternal(url.origin, remoteData);
   }
 
-  async servers(verbose) {
+  async servers() {
     const data = this.readConfigFile();
 
     process.stdout.write("\nCountries:\n");
@@ -379,24 +379,7 @@ module.exports = class MozillaVPN {
         process.stdout.write(`     code: ${clc.cyan(city.code)}\n`);
         process.stdout.write(`     latitude: ${clc.cyan(city.latitude)}\n`);
         process.stdout.write(`     longitude: ${clc.cyan(city.longitude)}\n`);
-        if (verbose) {
-          process.stdout.write("     servers:\n");
-          city.servers.forEach(server => {
-            let first = true;
-            for (let prop in server) {
-              process.stdout.write(`      ${first ? "." : " "} ${prop}: `);
-              if (Array.isArray(server[prop])) {
-                process.stdout.write(server[prop].join(", "));
-              } else {
-                process.stdout.write(`${server[prop]}`);
-              }
-              process.stdout.write("\n");
-              first = false;
-            }
-          });
-        } else {
-          process.stdout.write(`     servers: ${clc.cyan(city.servers.map(server => server.hostname).join(", "))}\n`);
-        }
+        process.stdout.write(`     servers: ${clc.cyan(city.servers.map(server => server.hostname).join(", "))}\n`);
       });
     });
   }

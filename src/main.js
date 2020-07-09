@@ -22,10 +22,7 @@ yargs
     _ => mvpn.account())
 
   .command("servers", "shows the list of available servers", {},
-    _ => mvpn.servers(false))
-
-  .command("fullservers", "shows the list of available servers (verbose)", {},
-    _ => mvpn.servers(true))
+    _ => mvpn.servers())
 
   .command("adddevice <deviceName>", "adds a device", {},
     argv => mvpn.createDevice(argv.deviceName))
