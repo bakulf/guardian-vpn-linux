@@ -49,7 +49,7 @@ module.exports = class MozillaVPN {
 
   configFile() {
     const homedir = os.homedir();
-    return path.join(homedir, ".mozilla_vpn.cf");
+    return path.join(homedir, ".mozillavpn.cf");
   }
 
   readConfigFile() {

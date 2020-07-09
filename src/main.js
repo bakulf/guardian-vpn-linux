@@ -3,41 +3,41 @@
 const yargs = require("yargs");
 const MozillaVPN = require("./vpn.js");
 
-const mozilla_vpn = new MozillaVPN();
+const mvpn = new MozillaVPN();
 
 yargs
-  .scriptName("mozilla_vpn")
+  .scriptName("mozillavpn")
   .usage("$0 <cmd> [options]")
 
   .command("login [url] [deviceName]", "starts the authentication flow", {},
-    argv => mozilla_vpn.login(argv.url, argv.deviceName))
+    argv => mvpn.login(argv.url, argv.deviceName))
 
   .command("logout", "forgets about your data", {},
-    _ => mozilla_vpn.logout())
+    _ => mvpn.logout())
 
   .command("show", "shows the current settings", {},
-    _ => mozilla_vpn.show())
+    _ => mvpn.show())
 
   .command("account", "shows the current remote settings", {},
-    _ => mozilla_vpn.account())
+    _ => mvpn.account())
 
   .command("servers", "shows the list of available servers", {},
-    _ => mozilla_vpn.servers(false))
+    _ => mvpn.servers(false))
 
   .command("fullservers", "shows the list of available servers (verbose)", {},
-    _ => mozilla_vpn.servers(true))
+    _ => mvpn.servers(true))
 
   .command("adddevice <deviceName>", "adds a device", {},
-    argv => mozilla_vpn.createDevice(argv.deviceName))
+    argv => mvpn.createDevice(argv.deviceName))
 
   .command("deldevice <deviceName>", "drops a device", {},
-    argv => mozilla_vpn.removeDevice(argv.deviceName))
+    argv => mvpn.removeDevice(argv.deviceName))
 
   .command("activate [serverName] [interfaceName] [deviceName]", "activates the mozilla VPN", {},
-    argv => mozilla_vpn.activate(true, argv.deviceName, argv.interfaceName, argv.serverName))
+    argv => mvpn.activate(true, argv.deviceName, argv.interfaceName, argv.serverName))
 
   .command("deactivate [serverName] [interfaceName] [deviceName]", "activates the mozilla VPN", {},
-    argv => mozilla_vpn.activate(false, argv.deviceName, argv.interfaceName, argv.serverName))
+    argv => mvpn.activate(false, argv.deviceName, argv.interfaceName, argv.serverName))
 
   .demandCommand()
   .strict()
