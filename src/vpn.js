@@ -125,8 +125,8 @@ module.exports = class MozillaVPN {
 
     process.stdout.write("Waiting... ");
     const data = await new Promise(resolve => {
-      const wait = _ => {
-        setTimeout(async _ => {
+      const wait = () => {
+        setTimeout(async () => {
           const resp = await this.fetch(json.verification_url);
           if (resp.status === 200) {
             const json = await resp.json();
@@ -452,7 +452,7 @@ module.exports = class MozillaVPN {
 
     await new Promise(resolve => {
       const stream = fs.createWriteStream(filepath, { encoding: "utf8" });
-      stream.on("finish", _ => resolve());
+      stream.on("finish", () => resolve());
       stream.write("[Interface]\n");
       stream.write(`PrivateKey = ${keys.privkey}\n`);
       stream.write(`Address = ${device.ipv4_address}, ${device.ipv6_address}\n`);

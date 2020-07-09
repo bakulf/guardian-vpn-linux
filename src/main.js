@@ -13,16 +13,16 @@ yargs
     argv => mvpn.login(argv.url, argv.deviceName))
 
   .command("logout", "forgets about your data", {},
-    _ => mvpn.logout())
+    () => mvpn.logout())
 
   .command("show", "shows the current settings", {},
-    _ => mvpn.show())
+    () => mvpn.show())
 
   .command("account", "shows the current remote settings", {},
-    _ => mvpn.account())
+    () => mvpn.account())
 
   .command("servers", "shows the list of available servers", {},
-    _ => mvpn.servers())
+    () => mvpn.servers())
 
   .command("adddevice <deviceName>", "adds a device", {},
     argv => mvpn.createDevice(argv.deviceName))
